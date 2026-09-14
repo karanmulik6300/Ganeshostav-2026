@@ -38,7 +38,7 @@ input,select,textarea{width:100%;padding:12px;border:1px solid #d8d8df;border-ra
  </div>
  <div id="loginBox" class="hidden" style="margin-top:15px">
   <div class="formgrid">
-   <div><label>खजिनदार</label><select id="username" autocomplete="username"><option value="karan">करण</option><option value="dipak">दिपक</option></select></div>
+   <div><label>Username / Email</label><input id="email" type="email" value="karanmulik6300@gmail.com" autocomplete="username" readonly></div>
    <div><label>पासवर्ड</label><input id="password" type="password" autocomplete="current-password"></div>
   </div>
   <div class="actions"><button class="primary" id="login" type="button">🔓 Login</button><button id="cancel" type="button">रद्द करा</button></div>
@@ -124,7 +124,8 @@ async function load(){
    console.error(error);
    $("status").className="notice error";
    $("status").textContent="❌ Cloud data load झाला नाही. Internet/refresh तपासा.";
-   $("recent").innerHTML='<div class="notice error">Database connection error: '+esc(error.message)+'</div>';
+   const recent=document.getElementById("recent");
+   if(recent) recent.innerHTML='<div class="notice error">Database connection error: '+esc(error.message)+'</div>';
    return;
  }
  rows=data||[]; render();
@@ -145,14 +146,25 @@ function setEditor(v){
 function show(t,ok=false){$("msg").textContent=t;$("msg").className="notice "+(ok?"ok":"error");}
 
 async function doLogin(){
- const u=$("username").value.trim().toLowerCase();
+ const email=$("email").value.trim().toLowerCase();
  const p=$("password").value;
- if(!u||!p){show("खजिनदार आणि पासवर्ड भरा.");return}
- const email = u.includes("@") ? u : EDITOR_EMAIL;
+ if(!email){show("Username / Email भरा.");return}
+ if(!p){show("पासवर्ड भरा.");return}
+ if(email!==EDITOR_EMAIL.toLowerCase()){show("❌ हा अधिकृत खजिनदार Email नाही.");return}
+ show("🔐 Login तपासत आहे...",true);
  const {data,error}=await db.auth.signInWithPassword({email,password:p});
- if(error){ console.error(error); show("लॉगिन झाले नाही: "+(error.message||"तपशील उपलब्ध नाही")); return; }
- if(data.user?.email?.toLowerCase()!==EDITOR_EMAIL.toLowerCase()){ await db.auth.signOut(); show("हा account अधिकृत खजिनदार नाही."); return; }
- $("password").value=""; $("loginBox").classList.add("hidden"); setEditor(true); showTab("home");
+ if(error){
+   console.error(error);
+   let msg="लॉगिन झाले नाही.";
+   if(error.message?.toLowerCase().includes("invalid login credentials")) msg="पासवर्ड चुकीचा आहे किंवा Supabase मध्ये खजिनदार account तयार/सक्रिय नाही.";
+   else if(error.message?.toLowerCase().includes("email not confirmed")) msg="खजिनदार account चा email confirmation बाकी आहे.";
+   else msg="लॉगिन झाले नाही: "+error.message;
+   show("❌ "+msg); return;
+ }
+ if(!data.session || data.user?.email?.toLowerCase()!==EDITOR_EMAIL.toLowerCase()){
+   await db.auth.signOut(); show("❌ अधिकृत खजिनदार account मिळाला नाही."); return;
+ }
+ $("password").value=""; $("loginBox").classList.add("hidden"); setEditor(true); showTab("home"); show("✅ खजिनदार Login यशस्वी.",true);
 }
 
 async function logout(){await db.auth.signOut();setEditor(false)}
@@ -202,9 +214,10 @@ $("saveExpense").onclick=()=>{
  add({type:"out",description:d,amount:a,transaction_date:$("edate").value||today,payment_mode:$("emode").value,category:$("ecat").value,vendor:$("vendor").value.trim(),bill_no_note:$("enote").value.trim(),treasurer:$("etreasurer").value});
 };
 
-db.auth.getSession().then(({data})=>{
+db.auth.getSession().then(({data,error})=>{
+ if(error){ console.error("Session check error",error); return; }
  if(data.session?.user?.email?.toLowerCase()===EDITOR_EMAIL.toLowerCase()) setEditor(true);
-});
+}).catch(e=>console.error("Session init error",e));
 
 db.auth.onAuthStateChange((_event,session)=>{
  if(session?.user?.email?.toLowerCase()===EDITOR_EMAIL.toLowerCase()) setEditor(true);
