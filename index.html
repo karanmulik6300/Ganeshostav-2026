@@ -27,7 +27,7 @@ input,select,textarea{width:100%;padding:12px;border:1px solid #d8d8df;border-ra
 <body>
 <header class="header">
 <h1>🪔 एक संघ तरुण मंडळ</h1>
-<p>टोप (सोनारगल्ली) • गणेशोत्सव २०२६ • Treasurer Management</p><div style="margin-top:12px;font-weight:800;font-size:16px">🔐 खजिनदार: करण / दिपक</div>
+<p>टोप (सोनारगल्ली) • गणेशोत्सव २०२६ • खजिनदार व्यवस्थापन</p><div style="margin-top:12px;font-weight:800;font-size:16px">🔐 खजिनदार: करण / दिपक</div>
 </header>
 
 <main class="wrap">
@@ -41,7 +41,7 @@ input,select,textarea{width:100%;padding:12px;border:1px solid #d8d8df;border-ra
    <div><label>खजिनदार</label><select id="username" autocomplete="username"><option value="karan">करण</option><option value="dipak">दिपक</option></select></div>
    <div><label>पासवर्ड</label><input id="password" type="password" autocomplete="current-password"></div>
   </div>
-  <div class="actions"><button class="primary" id="login" type="button">🔓 Login</button><button id="cancel" type="button">Cancel</button></div>
+  <div class="actions"><button class="primary" id="login" type="button">🔓 Login</button><button id="cancel" type="button">रद्द करा</button></div>
   <div id="msg" class="notice hidden"></div>
  </div>
 </section>
@@ -149,7 +149,7 @@ async function doLogin(){
  const p=$("password").value;
  if(!u||!p){show("खजिनदार आणि पासवर्ड भरा.");return}
  const email = u.includes("@") ? u : EDITOR_EMAIL;
- const {data,error}=await db.auth.signInWithपासवर्ड({email,password:p});
+ const {data,error}=await db.auth.signInWithPassword({email,password:p});
  if(error){ console.error(error); show("लॉगिन झाले नाही: "+(error.message||"तपशील उपलब्ध नाही")); return; }
  if(data.user?.email?.toLowerCase()!==EDITOR_EMAIL.toLowerCase()){ await db.auth.signOut(); show("हा account अधिकृत खजिनदार नाही."); return; }
  $("password").value=""; $("loginBox").classList.add("hidden"); setEditor(true); showTab("home");
